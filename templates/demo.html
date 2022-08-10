@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html style="height: 100%">
+	<head>
+		<meta charset="UTF-8">
+		<title>数据校验服务</title>
+		<!-- <script src="../static/js/jquery-3.2.0.min.js"  crossorigin="anonymous"></script> -->
+        <script src="https://ajax.aspnetcdn.com/ajax/jquery/jquery-3.5.1.min.js"></script>
+        <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">
+        <!-- 可选的 Bootstrap 主题文件（一般不用引入） -->
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap-theme.min.css" integrity="sha384-6pzBo3FDv/PJ8r2KRkGHifhEocL+1X2rVCTTkUfGk7/0pbek5mMa1upzvWbrUbOZ" crossorigin="anonymous">
+        <!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd" crossorigin="anonymous"></script>
+        <script src="https://cdn.staticfile.org/popper.js/1.15.0/umd/popper.min.js"></script>
+        <script src="../static/js/xlsx.full.min.js"  crossorigin="anonymous"></script>
+        <script type="text/javascript" src="https://cdn.bootcss.com/xlsx/0.12.7/xlsx.core.min.js"></script>
+        <link href="https://cdn.bootcss.com/font-awesome/5.8.2/css/all.min.css" rel="stylesheet">
+        <!-- <link rel="stylesheet" href="../static/js/bootstrap.min.css" > -->
+        <link rel="stylesheet" href="../static/css/bootstrap-table.min.css" >
+        <!-- <script type="text/javascript" src="../static/js/bootstrap.min.js"></script> -->
+        <script type="text/javascript" src="https://cdn.bootcdn.net/ajax/libs/bootstrap-table/1.18.3/bootstrap-table.min.js"></script>
+        <script src="https://cdn.bootcss.com/bootstrap-table/1.14.2/extensions/export/bootstrap-table-export.min.js"></script>
+        <link href="https://cdn.bootcss.com/toastr.js/latest/css/toastr.min.css" rel="stylesheet">
+        <script src="https://cdn.bootcss.com/toastr.js/latest/js/toastr.min.js"></script>
+	</head>
+    
+	<script type="text/javascript">
+		function clickAll(allName, selectName){
+			var arr = document.getElementsByName(selectName);
+			var ck = document.getElementById(allName);
+			for(i in arr){
+				arr[i].checked = ck.checked;
+			}
+		}
+
+        function getEachSelect(classname){
+        	var array = new Array();
+        	if (classname == "rank"){
+        		var selectedItem = document.getElementsByName(classname);
+        		array[0] = selectedItem[0].value;
+        	} else {
+        		var j = 0;
+        	    var selectedItem = document.getElementsByName(classname);
+        	    for (var i = 0; i<selectedItem.length; i++){
+        		    if (selectedItem[i].checked == true){
+        			    array[j] = selectedItem[i].value;
+        			    j++;
+        		    }
+        	    }
+        	}
+        	return array;
+
+        }
+
+        //获取选项
+        function getSelectOption(){
+        	var metric = getEachSelect("MetricNature");
+        	var date = getEachSelect("dateRecent");
+        	var freq = getEachSelect("frequency");
+        	var dbname = getEachSelect("database");
+        	var ranknum = getEachSelect("rank");
+
+        	var result = {
+            	"metric": metric,
+            	"date": date,
+            	"freqtype": freq,
+            	"dbname": dbname,
+            	"ranknum": ranknum
+            };
+            console.log(result);
+            return result
+        }
+
+        function getTextField(){
+        	var info = document.getElementById("textField").innerText;
+        	return info;
+        }
+
+        //控制json发送
+        function sendJson() {
+            $.ajax({
+                type : "POST",
+                url : "/config",
+                contentType: "application/json;charset=UTF-8",
+                dataType: "text",
+                data: JSON.stringify(getSelectOption()),
+                success : function(response) {
+                	var result = JSON.stringify(JSON.parse(response), null, 2);
+                	console.log(result);
+                	if(result == '"日期格式错误"'){
+                		alert("日期存在错误，请检查后重新上传文件")
+                	}else{
+                		document.getElementById("textField").innerText = result;
+                	}
+                }
+            });
+        }
+        
+        // 开始计算
+        function startCalculate() {
+        	$.ajax({
+                type : "POST",
+                url : "/calculate",
+                contentType: "application/json;charset=UTF-8",
+                dataType: "text",
+                data: JSON.stringify(document.getElementById("textField").innerText),
+                success : function(response) {
+                	console.log(response);
+                	alert("计算完成，请在结果文件夹中查看");
+                	window.location.href = "http://192.168.1.50:5000/download";
+                }
+            });
+        }
+
+        //控制上传
+        $(function () {
+            $('#file').change(function (e) {
+               var files = e.target.files;
+               var formFile = new FormData();
+               formFile.append("file", files[0]); //加入文件对象
+                $.ajax({
+                   url: "/upload_file",
+                   data: formFile,
+                   type: "post",
+                   dataType: "json",
+                   cache: false,//上传文件无需缓存
+                   processData: false,//用于对data参数进行序列化处理 这里必须false
+                   contentType: false, //必须
+                   success: function (response) {
+                   	    console.log(response["数据状态"]);
+                   	    if (response["数据状态"] == "正常"){
+                   	        alert("上传完成! 数据频率为: "+response["数据频率"]);
+                   	        window.location.reload();
+                   	    }else{
+                   	    	alert("数据异常! 检查结果为: "+response["数据状态"]);
+                   	    	window.location.reload();
+                   	    }
+                   },
+               })
+            });
+        })
+	</script>>
+	<body>
+
+		<h1 style="color:#ec7259;font-family:Times;font-size:50px;text-align:center"> 相似度检测平台</h1>
+		<hr style="height:1px;border:none;border-top:1px solid #555555;" />
+		<!-- 上传部分 -->
+		<div class="table-box" style="margin: 5px">
+		<div class="toolbar" style="width: 100%; margin-left: 20px; display: flex; flex-direction: row; flex-wrap: wrap; align-items: flex-center; justify-content: space-between;">
+            <label for="file"  class=" btn btn-info">上传excel文件并检查</label>
+            <input id="file"  name="loadfile"  type="file"  style="display:none">
+        </div>
+        <hr style="height:1px;border:none;border-top:1px solid #555555;" />
+		<!-- 复选框 -->
+        <div>
+            <form name="from1" id="form1">
+            	<label>指标性质</label>
+            	<input id="MetricNatureAll" type="checkbox" value='EuclidDistance' onclick="clickAll('MetricNatureAll','MetricNature')"/><label>全选</label>
+            	<input name="MetricNature" type="checkbox" value='EuclidDistance'/><label>欧式距离</label>
+                <input name="MetricNature" type="checkbox" value="PatternDistance"/><label>模式距离</label>
+                <input name="MetricNature" type="checkbox" value="ShapeDistance"/><label>形状距离</label>
+                <br>
+                <br>
+                <label>时间区间</label>
+                <input name="dateRecent" type="radio" value='RecentThree'/><label>近3年</label>
+                <input name="dateRecent" type="radio" value='RecentSix'/><label>近6年</label>
+                <input name="dateRecent" type="radio" value='RecentTen'/><label>近10年</label>
+                <input name="dateRecent" type="radio" value='RecentAll'/><label>全部时间</label>
+                <br>
+                <br>
+                <label>频率选择</label>
+                <input name="frequency" type="radio" value='SameFreq'/><label>同频</label>
+                <input name="frequency" type="radio" value='DiffFreq'/><label>混频</label>
+                <input name="frequency" type="radio" value='AllFreq'/><label>同频+混频</label>
+                <br>
+                <br>
+                <label>数据库选择</label>
+                <input id="databaseAll" type="checkbox" value="all" onclick="clickAll('databaseAll','database')" /><label>全选</label>
+                <input name="database" type="checkbox" value='furniture'/><label>furniture</label>
+                <input name="database" type="checkbox" value='coal'/><label>coal</label>
+                <input name="database" type="checkbox" value='steel'/><label>steel</label>
+                <br>
+                <br>
+                <label>输入排名</label>
+                <input name = 'rank' type='text' oninput="value=value.replace(/^(0+)|[^\d]+/g,'')">
+                <br>
+
+                <div class="toolbar" style="width: 100%; margin-left: 20px; display: flex; flex-direction: row; flex-wrap: wrap; align-items: flex-center; justify-content: space-between;">
+                    <label for="config" class="btn btn-info">生成配置信息</label>
+                    <input id="config" name="postconfig" style="display:none" onclick="javascript:sendJson()">
+                </div>
+            </form>
+        </div>
+        
+        <!-- 显示窗口 -->
+        <div>
+            <pre id="textField"></pre>
+        </div>
+
+        <hr style="height:1px;border:none;border-top:1px solid #555555;" />
+        
+        <!-- 开始计算按钮 -->
+        <div class="toolbar" style="width: 100%; margin-left: 20px; display: flex; flex-direction: row; flex-wrap: wrap; align-items: flex-center; justify-content: space-between;">
+            <label for="calculate" class="btn btn-info">开始计算</label>
+            <input id="calculate" name="postconfig" style="display:none" onclick="javascript:startCalculate()">
+        </div>
+	</body>
+
+</html>
