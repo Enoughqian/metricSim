@@ -13,6 +13,9 @@ from tools.checkInput import *
 from tools.genDataBaseConfig import *
 from tools.checkConfig import *
 from tools.calMetric import *
+from tools.genPdf import *
+from tools.zipFile import *
+import shutil
 
 # 构造flask服务
 app = Flask(__name__)
@@ -49,11 +52,10 @@ def upload():
         judge_result = judgeData(path)
         
         # 异常数据删除
-        print(judge_result[1])
         if judge_result[1] != "正常":
             os.remove(path)
         else:
-            with open("temp/records.txt", "w", encoding="GBK") as f:
+            with open("temp/records.txt", "w", encoding="utf-8") as f:
                 temp_content = path+"\n"+judge_result[0]
                 f.write(temp_content)
         return_content = {"数据状态": judge_result[1], "数据频率": judge_result[0]}
@@ -64,7 +66,7 @@ def upload():
 def form_data():
     data = request.get_data()
     data = eval(data)
-    with open("temp/records.txt", "r", encoding="GBK") as f:
+    with open("temp/records.txt", "r", encoding="utf-8") as f:
         temp = f.read().strip().split("\n")
         file_path = temp[0]
         freq = temp[1]
@@ -77,7 +79,6 @@ def form_data():
     
     checkresult = checkStartEndDate(file_path, data["date"])
     if checkresult[0] == "日期格式正常":
-        
         data["start_date"] = checkresult[1][0]
         data["end_date"] = checkresult[1][1]
         # 数据保存
@@ -95,16 +96,42 @@ def calculate_data():
 
     # 生成sql配置文件
     genDBConfig(data)
+    # 新建文件夹
+    date_format = data["file"].split("/")[-1][:6]
+    if os.path.exists("temp/result-"+date_format):
+        shutil.rmtree("temp/result-"+date_format)
+    else:
+        os.mkdir("temp/result-"+date_format)
     # 开始计算
     sql_config = pd.read_csv("temp/dbconfig.csv")
-    cal_result = catchDataFromSqlAndCal(data, sql_config)
-    cal_result.to_csv("temp/sim_result.csv", index=None, encoding="GBK")
-    return "成功"
+    # 计算结果和绘图数据
+    cal_result, plot_result = catchDataFromSqlAndCal(data, sql_config)
+    cal_result_name = "temp/result-{}/sim_result-{}.csv".format(date_format, date_format)
+    cal_result.to_csv(cal_result_name, index=None, encoding="GBK")
+    # 绘图数据
+    plot_result_name = "temp/result-{}/sim_plot-{}.csv".format(date_format, date_format)
+    plot_result.to_csv(plot_result_name, index=None, encoding="GBK")
+
+    # 绘图
+    plot_pages(plot_result_name, plot_result_name.replace("csv", "pdf"))
+
+    # 压缩
+    if os.path.exists("temp/result-{}".format(date_format)+".zip"):
+        shutil.rmtree("temp/result-{}".format(date_format)+".zip")
+    make_zip("temp/result-{}".format(date_format), "temp/result-{}".format(date_format)+".zip")
+
+    return jsonify({"path": plot_result_name})
 
 # 结果下载
-@app.route("/download", methods=['GET'])
+@app.route("/download", methods=["GET"])
 def download_file():
-    return send_file("temp/sim_result.csv", as_attachment=True)
+    with open("temp/records.txt", "r", encoding="utf-8") as f:
+        path = f.read().strip().split("\n")[0]
+    num_id = path.split("/")[-1][:6]
+    name = "result-{}.zip".format(num_id)
+    path = os.path.abspath(__file__).replace("Server.py","temp")
+
+    return send_from_directory(path, filename = name, as_attachment=True)
 
 if __name__ == "__main__":
     # 链接本地ip，绑定端口为5000

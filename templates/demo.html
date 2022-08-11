@@ -106,12 +106,12 @@
                 data: JSON.stringify(document.getElementById("textField").innerText),
                 success : function(response) {
                 	console.log(response);
-                	alert("计算完成，请在结果文件夹中查看");
-                	window.location.href = "http://192.168.1.50:5000/download";
+                	alert("计算完成，即将下载");
+                    window.location.href="http://192.168.1.50:5000/download";
                 }
             });
         }
-
+        
         //控制上传
         $(function () {
             $('#file').change(function (e) {
@@ -156,9 +156,11 @@
             <form name="from1" id="form1">
             	<label>指标性质</label>
             	<input id="MetricNatureAll" type="checkbox" value='EuclidDistance' onclick="clickAll('MetricNatureAll','MetricNature')"/><label>全选</label>
-            	<input name="MetricNature" type="checkbox" value='EuclidDistance'/><label>欧式距离</label>
-                <input name="MetricNature" type="checkbox" value="PatternDistance"/><label>模式距离</label>
-                <input name="MetricNature" type="checkbox" value="ShapeDistance"/><label>形状距离</label>
+            	<input name="MetricNature" type="checkbox" value='EuclidDistanceOne'/><label>欧式距离一阶</label>
+                <input name="MetricNature" type="checkbox" value="EuclidDistanceTwo"/><label>欧式距离二阶</label>
+                <input name="MetricNature" type="checkbox" value="PearsonSim"/><label>皮尔逊相关系数</label>
+                <input name="MetricNature" type="checkbox" value="CorrelationSim"/><label>Corr相关系数</label>
+                <input name="MetricNature" type="checkbox" value="dtwDistance"/><label>dtw距离</label>
                 <br>
                 <br>
                 <label>时间区间</label>
@@ -176,8 +178,16 @@
                 <br>
                 <label>数据库选择</label>
                 <input id="databaseAll" type="checkbox" value="all" onclick="clickAll('databaseAll','database')" /><label>全选</label>
-                <input name="database" type="checkbox" value='furniture'/><label>furniture</label>
+                <input name="database" type="checkbox" value='build'/><label>build</label>
+                <input name="database" type="checkbox" value='financial'/><label>financial</label>
+                <input name="database" type="checkbox" value='house'/><label>house</label>
+                <input name="database" type="checkbox" value='machine'/><label>machine</label>
+                <input name="database" type="checkbox" value='rotom'/><label>rotom</label>
+                <input name="database" type="checkbox" value='metal'/><label>metal</label>
+                <input name="database" type="checkbox" value='sw'/><label>sw</label>
                 <input name="database" type="checkbox" value='coal'/><label>coal</label>
+                <input name="database" type="checkbox" value='coal_enriched'/><label>coal_enriched</label>
+                <input name="database" type="checkbox" value='commodity'/><label>commodity</label>
                 <input name="database" type="checkbox" value='steel'/><label>steel</label>
                 <br>
                 <br>
@@ -202,8 +212,11 @@
         <!-- 开始计算按钮 -->
         <div class="toolbar" style="width: 100%; margin-left: 20px; display: flex; flex-direction: row; flex-wrap: wrap; align-items: flex-center; justify-content: space-between;">
             <label for="calculate" class="btn btn-info">开始计算</label>
-            <input id="calculate" name="postconfig" style="display:none" onclick="javascript:startCalculate()">
+            <input id="calculate" name="postconfig" style="display:none" onclick="startCalculate()">
         </div>
+
+        <hr style="height:1px;border:none;border-top:1px solid #555555;" />
+
 	</body>
 
 </html>

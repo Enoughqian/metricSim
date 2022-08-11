@@ -22,7 +22,6 @@ def checkStartEndDate(data_path, date_type):
     data_end = datetime.date(pd.to_datetime(data_end))
     # 根据时间状态获取时间
     now_date = datetime.date(datetime.now())
-    print(date_type)
     if date_type == "RecentThree":
         start = datetime.date(datetime.now() - relativedelta(years=3))
     elif date_type == "RecentSix":
