@@ -1,0 +1,13 @@
+index_id,index_name,frequency,tag,type,db_name,sql_query,欧式距离一阶,欧式距离二阶,皮尔逊相关系数,Corr相关系数,dtw距离,Rank
+S0062656,煤钢类_进口金额:生铁:当月值,月,其他,同比,steel,select * from final_data_value where index_id = 'S0062656' and date >= '2019-10-27' and date <= '2022-03-31';,5.37858,1.20574,0.77046,0.14966,3.36217,1
+S0027378,煤钢类_产量:钢材:当月值,月,其他,同比,steel,select * from final_data_value where index_id = 'S0027378' and date >= '2019-10-27' and date <= '2022-03-31';,6.67301,1.63321,0.61565,0.23174,3.51686,2
+S0027370,煤钢类_产量:生铁:当月值,月,其他,同比,steel,select * from final_data_value where index_id = 'S0027370' and date >= '2019-10-27' and date <= '2022-03-31';,7.38704,1.71451,0.66425,0.19563,3.98304,3
+S0027398,煤钢类_产量:盘条线材:当月值_有极端值,月,其他,同比,steel,select * from final_data_value where index_id = 'S0027398' and date >= '2019-10-27' and date <= '2022-03-31';,6.36018,1.53064,0.7812,0.16557,4.54261,4
+S0029416,煤钢类_产量:粗钢:山东:当月值,月,其他,同比,steel,select * from final_data_value where index_id = 'S0029416' and date >= '2019-10-27' and date <= '2022-03-31';,7.25703,1.7149,0.58268,0.21023,3.62667,5
+S0027374,煤钢类_产量:粗钢:当月值_有极端值,月,其他,同比,steel,select * from final_data_value where index_id = 'S0027374' and date >= '2019-10-27' and date <= '2022-03-31';,7.43186,1.70581,0.65623,0.1348,4.29494,6
+S5708126,煤钢类_钢铁行业采购经理人指数(PMI):全国,月,其他,同比,steel,select * from final_data_value where index_id = 'S5708126' and date >= '2019-10-27' and date <= '2022-03-31';,7.97146,1.75813,0.56879,0.29215,5.59044,7
+S0027490,煤钢类_进口数量:钢材:当月值_有极端值,月,其他,同比,steel,select * from final_data_value where index_id = 'S0027490' and date >= '2019-10-27' and date <= '2022-03-31';,7.64459,1.82074,0.65471,0.06138,3.10881,8
+S5706262,煤钢类_产量:螺纹钢:当月值,月,其他,同比,steel,select * from final_data_value where index_id = 'S5706262' and date >= '2019-10-27' and date <= '2022-03-31';,7.81373,1.79419,0.61355,0.18641,4.93738,9
+S0062213,煤钢类_进口数量:钢坯:当月值,月,其他,同比,steel,select * from final_data_value where index_id = 'S0062213' and date >= '2019-10-27' and date <= '2022-03-31';,7.72961,1.82636,0.43062,0.11882,3.36747,10
+M0041571,煤钢类_进口数量:铁矿砂及其精矿:当月值,月,其他,同比,steel,select * from final_data_value where index_id = 'M0041571' and date >= '2019-10-27' and date <= '2022-03-31';,7.22023,1.72577,0.4573,0.05942,4.7115,11
+S0063582,煤钢类_产量:生铁:河北:当月值,月,其他,同比,steel,select * from final_data_value where index_id = 'S0063582' and date >= '2019-10-27' and date <= '2022-03-31';,8.09665,1.81319,0.57233,0.07221,4.38329,12

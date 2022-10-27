@@ -1,0 +1,19 @@
+{
+   "metric": [
+      "EuclidDistanceOne",
+      "EuclidDistanceTwo",
+      "PearsonSim",
+      "CorrelationSim",
+      "dtwDistance"
+   ],
+   "date": "RecentThree",
+   "freqtype": "SameFreq",
+   "dbname": [
+      "steel"
+   ],
+   "ranknum": "12",
+   "file": "C:\\Users\\18514\\Desktop\\20220907\\metricSim_bk\\uploads/20221027/101933/月度数据1.xlsx",
+   "freq": "月",
+   "start_date": "2019-10-27",
+   "end_date": "2022-03-31"
+}

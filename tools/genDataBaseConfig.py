@@ -13,7 +13,7 @@ import pymysql
 pymysql.install_as_MySQLdb()
 
 # 生成数据库的配置文件
-def genDBConfig(input_json):
+def genDBConfig(input_json, save_path):
     # 获取基本信息
     freq_state = input_json["freqtype"]
     freq = input_json["freq"]
@@ -78,4 +78,4 @@ def genDBConfig(input_json):
             sql_list.append("select * from daily_data_value where index_id = '{}' and date >= '{}' and date <= '{}';".format(temp[0], start_date, end_date))
     result["sql_query"] = sql_list
     result = result.reset_index(drop=True, inplace=False)
-    result.to_csv("temp/dbconfig.csv", index=None)
+    result.to_csv(save_path + "/dbconfig.csv", index=None)

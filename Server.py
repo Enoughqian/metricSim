@@ -9,6 +9,7 @@ import pandas as pd
 from werkzeug.utils import secure_filename
 from flask_cors import *
 from flask import Flask,render_template,request,Response,redirect,url_for, jsonify,g,send_from_directory,send_file
+from flask import session
 from tools.checkInput import *
 from tools.genDataBaseConfig import *
 from tools.checkConfig import *
@@ -16,10 +17,16 @@ from tools.calMetric import *
 from tools.genPdf import *
 from tools.zipFile import *
 import shutil
+import time
+import warnings
+warnings.filterwarnings("ignore")
 
 # 构造flask服务
 app = Flask(__name__)
+# 使用session替代全局变量
+app.config['SECRET_KEY'] = os.urandom(24)
 app.config['JSON_AS_ASCII'] = False
+state
 
 # 主页面
 @app.route("/")
@@ -32,31 +39,37 @@ def upload():
     if request.method == 'POST':
         f = request.files['file']
         basepath = os.path.dirname(__file__)
-        file_name = str(datetime.now()).split(" ")[1].replace(":", "").split(".")[0]
-        dir_path = str(datetime.now()).split(" ")[0].replace("-","")
-        upload_path = os.path.join(basepath, 'uploads/'+dir_path)
+        date_path = str(datetime.now()).split(" ")[0].replace("-","")
+        time_path = str(datetime.now()).split(" ")[1].replace(":", "").split(".")[0]
         
-        # 判断文件夹是否存在
-        if not os.path.exists(upload_path):
-            os.mkdir(upload_path)
+        upload_date_path = os.path.join(basepath, 'uploads/'+date_path)
+        upload_time_path = os.path.join(basepath, 'uploads/'+date_path+"/"+time_path)
         
-        # 拼接数据保存路径
-        file_path = str(file_name)+str(f.filename)
-        f.save(upload_path+"/"+file_path)
+        # 判断日期文件夹是否存在
+        if not os.path.exists(upload_date_path):
+            os.mkdir(upload_date_path)
+        # 判断时间文件夹是否存在
+        if not os.path.exists(upload_time_path):
+            os.mkdir(upload_time_path)
 
+        # 拼接数据保存路径
+        file_path = str(upload_time_path)+"/"+str(f.filename)
+        f.save(file_path)
         # 数据读取
-        path = upload_path+"/"+file_path
-        data = pd.read_excel(path)
+        data = pd.read_excel(file_path)
         
         # 数据检查
-        judge_result = judgeData(path)
+        judge_result = judgeData(file_path)
+        
+        # 赋值给session变量
+        session['currentpath'] = upload_time_path
         
         # 异常数据删除
         if judge_result[1] != "正常":
-            os.remove(path)
+            os.remove(file_path)
         else:
-            with open("temp/records.txt", "w", encoding="utf-8") as f:
-                temp_content = path+"\n"+judge_result[0]
+            with open(str(upload_time_path)+"/records.txt", "w", encoding="utf-8") as f:
+                temp_content = file_path+"\n"+judge_result[0]
                 f.write(temp_content)
         return_content = {"数据状态": judge_result[1], "数据频率": judge_result[0]}
     return jsonify(return_content)
@@ -64,9 +77,12 @@ def upload():
 # 传入配置信息
 @app.route("/config", methods=["POST"])
 def form_data():
+    # 从session中获取存储的路径
+    upload_time_path = session.get('currentpath')
+    # 获取前端传过来的信息
     data = request.get_data()
     data = eval(data)
-    with open("temp/records.txt", "r", encoding="utf-8") as f:
+    with open(upload_time_path + "/records.txt", "r", encoding="utf-8") as f:
         temp = f.read().strip().split("\n")
         file_path = temp[0]
         freq = temp[1]
@@ -81,9 +97,12 @@ def form_data():
     if checkresult[0] == "日期格式正常":
         data["start_date"] = checkresult[1][0]
         data["end_date"] = checkresult[1][1]
-        # 数据保存
-        with open("temp/config.json", "w") as f:
-            json.dump(data, f)
+        
+        # 配置文件保存
+        with open(upload_time_path + "/config.json", "w", encoding="GBK") as f:
+            json.dump(data, f, ensure_ascii=False, indent=3)
+
+        # 返回交给前端显示
         return jsonify(data)
     else:
         return jsonify(checkresult[0])
@@ -91,48 +110,59 @@ def form_data():
 # 点击运行开始计算
 @app.route("/calculate", methods=["post"])
 def calculate_data():
+    start_time = time.time()
     data = request.get_data()
     data = json.loads(eval(data))
 
+    # 从session中获取存储的路径
+    upload_time_path = session.get('currentpath')
+    
     # 生成sql配置文件
-    genDBConfig(data)
-    # 新建文件夹
-    date_format = data["file"].split("/")[-1][:6]
-    if os.path.exists("temp/result-"+date_format):
-        shutil.rmtree("temp/result-"+date_format)
-    else:
-        os.mkdir("temp/result-"+date_format)
+    genDBConfig(data, upload_time_path)
+
+    # 新建结果保存文件夹
+    if os.path.exists(upload_time_path+"/result"):
+        shutil.rmtree(upload_time_path+"/result")
+    os.mkdir(upload_time_path+"/result")
+    
     # 开始计算
-    sql_config = pd.read_csv("temp/dbconfig.csv")
-    # 计算结果和绘图数据
+    sql_config = pd.read_csv(upload_time_path+"/dbconfig.csv")
+
+    # 计算结果和绘图
     cal_result, plot_result = catchDataFromSqlAndCal(data, sql_config)
-    cal_result_name = "temp/result-{}/sim_result-{}.csv".format(date_format, date_format)
+    cal_result_name = upload_time_path+"/result/sim_result.csv"
     cal_result.to_csv(cal_result_name, index=None, encoding="GBK")
+
+    # 计算耗时
+    end_time = time.time()
+    print("本次耗时: ", end_time - start_time, "数据数量： ", np.shape(sql_config)[0])
+    
     # 绘图数据
-    plot_result_name = "temp/result-{}/sim_plot-{}.csv".format(date_format, date_format)
+    plot_result_name = upload_time_path+"/result/sim_plot.csv"
     plot_result.to_csv(plot_result_name, index=None, encoding="GBK")
 
     # 绘图
-    plot_pages(plot_result_name, plot_result_name.replace("csv", "pdf"))
-
-    # 压缩
-    if os.path.exists("temp/result-{}".format(date_format)+".zip"):
-        shutil.rmtree("temp/result-{}".format(date_format)+".zip")
-    make_zip("temp/result-{}".format(date_format), "temp/result-{}".format(date_format)+".zip")
-
+    plot_pages(plot_result_name, plot_result_name[:-4]+".pdf")
+    
+    # 压缩，增加时间标记，20220907/115353
+    upload_time = "-"+ "".join(upload_time_path.split("/")[-2:])
+    if os.path.exists(upload_time_path+"/result{}.zip".format(upload_time)):
+        os.remove(upload_time_path+"/result{}.zip".format(upload_time))
+    print(upload_time_path+"/result{}.zip".format(upload_time))
+    make_zip(upload_time_path+"/result", upload_time_path+"/result{}.zip".format(upload_time))
+    
     return jsonify({"path": plot_result_name})
 
 # 结果下载
 @app.route("/download", methods=["GET"])
 def download_file():
-    with open("temp/records.txt", "r", encoding="utf-8") as f:
-        path = f.read().strip().split("\n")[0]
-    num_id = path.split("/")[-1][:6]
-    name = "result-{}.zip".format(num_id)
-    path = os.path.abspath(__file__).replace("Server.py","temp")
-
-    return send_from_directory(path, filename = name, as_attachment=True)
+    upload_time_path = session.get('currentpath')
+    upload_time = "-"+ "".join(upload_time_path.split("/")[-2:])
+    name = "result{}.zip".format(upload_time)
+    return send_from_directory(upload_time_path, filename = name, as_attachment=True)
 
 if __name__ == "__main__":
     # 链接本地ip，绑定端口为5000
+    if os.path.exists("uploads") == False:
+        os.mkdir("uploads")
     app.run(host="0.0.0.0", port=5000)
