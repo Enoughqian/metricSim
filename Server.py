@@ -26,7 +26,6 @@ app = Flask(__name__)
 # 使用session替代全局变量
 app.config['SECRET_KEY'] = os.urandom(24)
 app.config['JSON_AS_ASCII'] = False
-state
 
 # 主页面
 @app.route("/")
